@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <string.h>
 
 #define attr_module_hidden __attribute__((weak)) __attribute__((visibility("hidden")))
 #define attr_public __attribute__((visibility("default")))
@@ -19,7 +21,6 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/Pad.h>
-//#include <math.h>
 #include "plugin_common.h"
 #include "sorthooks.h"
 #include "DTAFuncs.h"
@@ -37,9 +38,11 @@ attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
 void DoNotificationStatic(const char* text) {
     bool NotifyColored = file_exists("/data/HyperHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
+    Buffer.type = NotificationRequest;
+    Buffer.unk3 = 0;
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
-    strcpy(Buffer.message, text);
+    strncpy(Buffer.message, text, sizeof(Buffer.message) - 1);
     if (NotifyColored)
         strcpy(Buffer.iconUri, "https://raw.githubusercontent.com/hmxmilohax/rock-band-3-deluxe/100069d1c2293424a659ecb4a5ddacc3b91c4f9b/dependencies/media/dx.png");
     else
@@ -52,7 +55,7 @@ void DoNotification(const char *FMT, ...) {
     OrbisNotificationRequest Buffer = { 0 };
     va_list args;
     va_start(args, FMT);
-    vsprintf(Buffer.message, FMT, args);
+    vsnprintf(Buffer.message, sizeof(Buffer.message), FMT, args);
     va_end(args);
     Buffer.type = NotificationRequest;
     Buffer.unk3 = 0;
@@ -92,9 +95,6 @@ HOOK_INIT(NewFile);
 void NewFile_hook(const char* path, FileMode mode) {
     char rawpath[2048] = {0};
     strcat(rawpath, RawfilesFolder);
-    /*if (rawpath[strlen(rawpath) - 1] != '/') {
-        strcat(rawpath, "/");
-    }*/
     strcat(rawpath, path);
     char gamepath[2048] = {0};
     strcat(gamepath, GameRawfilesFolder);
@@ -110,18 +110,15 @@ void NewFile_hook(const char* path, FileMode mode) {
     return;
 }
 
-//speed hack
+// speed hack
 void(*GameRestart)(void*, bool);
 void(*SetMusicSpeed)(void*, float);
-//float slopsum = 0.0f;
-//int slopcount = 0;
+
 HOOK_INIT(GameRestart);
 
 void GameRestart_hook(void* thisGame, bool restart) {
     HOOK_CONTINUE(GameRestart, void (*)(void*, bool), thisGame, restart);
     set_plugin_var("insong", 1);
-    //slopsum = 0;
-    //slopcount = 0;
     refreshrp = true;
     set_plugin_var("dontmodifyartist", 0);
     bool autoplay = (get_plugin_var("autoplay") != 0);
@@ -129,7 +126,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     int speedmod = get_plugin_var("speedmod");
     float speed = (float)speedmod / 100;
 
-    if (speed > 0.00 && speed != 1.00){
+    if (speed > 0.00 && speed != 1.00) {
         SetMusicSpeed(thisGame, speed);
         final_printf("Music speed: %.2f\n", speed);
         if (autoplay || drunkmode)
@@ -141,7 +138,7 @@ void GameRestart_hook(void* thisGame, bool restart) {
     return;
 }
 
-//song title hook for reporting speedhack/autoplay
+// song title hook for reporting speedhack/autoplay
 char* (*GetTitle)(SongMetadata*);
 const char* autoplaytitle = " (AUTOPLAY)";
 const char* drunkmodetitle = " (DRUNK MODE)";
@@ -149,17 +146,23 @@ const char* drunkmodetitle = " (DRUNK MODE)";
 HOOK_INIT(GetTitle);
 
 char* GetTitle_hook(SongMetadata* thisMetadata) {
+    static char originint[1024];
+    static char speedtitleint[512];
+    static char aptitleint[512];
+    static char dmtitleint[512];
+
     bool insong = (get_plugin_var("insong") != 0);
     bool dontmodifyartist = (get_plugin_var("dontmodifyartist") != 0);
     bool origininsongsel = (get_plugin_var("origininsongsel") != 0);
     DataNode ret;
-    char originint[1024] = { 0 };
+
     if (!insong) {
         if (!sortingbyartist)
             return thisMetadata->mTitle;
         else if (dontmodifyartist) {
             return thisMetadata->mTitle;
         } else {
+            memset(originint, 0, sizeof(originint));
             strcat(originint, thisMetadata->mTitle);
             if (origininsongsel) {
                 char OriginLocalizedExec[1024] = { 0 };
@@ -171,45 +174,33 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
                 strcat(originint, " | ");
                 strcat(originint, OriginLocalized.sym);
             }
-            char* origin = originint;
-            return origin;
+            return originint;
         }
     }
 
-    bool speedfile = file_exists("/data/HyperHEN/RB4DX/speedmod.ini");
     int speed = get_plugin_var("speedmod");
-    char speedtitleint[512] = {0};
     char speedtxt[512] = { 0 };
-    char* speedtitle;
+    memset(speedtitleint, 0, sizeof(speedtitleint));
     strcat(speedtitleint, thisMetadata->mTitle);
 
     bool autoplay = (get_plugin_var("autoplay") != 0);
-    char aptitleint[512] = { 0 };
+    memset(aptitleint, 0, sizeof(aptitleint));
     strcat(aptitleint, thisMetadata->mTitle);
     strcat(aptitleint, autoplaytitle);
-    char* aptitle = aptitleint;
 
     bool drunkmode = (get_plugin_var("drunkmode") != 0);
-    char dmtitleint[512] = { 0 };
+    memset(dmtitleint, 0, sizeof(dmtitleint));
     strcat(dmtitleint, thisMetadata->mTitle);
     strcat(dmtitleint, drunkmodetitle);
-    char* dmtitle = dmtitleint;
-
-    //final_printf("songtitle: %s\n", thisMetadata->mTitle);
-    //final_printf("apsongtitle: %s\n", aptitle);
 
     if (insong && autoplay)
-        //include " (AUTOPLAY)" at the end of the song title
-        return aptitle;
+        return aptitleint;
     else if (insong && drunkmode)
-        //include " (DRUNK MODE)" at the end of the song title
-        return dmtitle;
+        return dmtitleint;
     else if (insong && speed > 0 && speed != 100) {
-        // include " (x% Speed)" at the end of the song title
         sprintf(speedtxt, " (%d%% Speed)", speed);
         strcat(speedtitleint, speedtxt);
-        speedtitle = speedtitleint;
-        return speedtitle;
+        return speedtitleint;
     }
     else
         return thisMetadata->mTitle;
@@ -234,13 +225,11 @@ void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     return;
 }
 
-//artist hook for detailed song stats
+// artist hook for detailed song stats
 char* (*GetArtist)(SongMetadata*);
 const char* famousby = "As Made Famous By ";
 
 HOOK_INIT(GetArtist);
-
-//convert double quotes to single quotes to prevent crashing when creating the discordrp.json file
 
 void fix_quotes(const char* input, char* output) {
     while (*input) {
@@ -256,18 +245,21 @@ void fix_quotes(const char* input, char* output) {
 }
 
 char* GetArtist_hook(SongMetadata* thisMetadata) {
+    static char originint[1024];
+    static char detailedint[2048];
+
     bool insong = (get_plugin_var("insong") != 0);
     bool dontmodifyartist = (get_plugin_var("dontmodifyartist") != 0);
     bool origininsongsel = (get_plugin_var("origininsongsel") != 0);
 
     DataNode ret;
-    char originint[1024] = { 0 };
     if (!insong) {
         if (dontmodifyartist)
             return thisMetadata->mArtist;
         else if (sortingbyartist)
             return thisMetadata->mArtist;
         else {
+            memset(originint, 0, sizeof(originint));
             strcat(originint, thisMetadata->mArtist);
             if (origininsongsel) {
                 char OriginLocalizedExecA[1024] = { 0 };
@@ -279,12 +271,10 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
                 strcat(originint, " | ");
                 strcat(originint, OriginLocalizedA.sym);
             }
-            char* origin = originint;
-            return origin;
+            return originint;
         }
     }
 
-    
     if (dontmodifyartist)
         return thisMetadata->mArtist;
 
@@ -294,9 +284,8 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     bool showyear = (get_plugin_var("yeartxt") != 0);
     bool showgenre = (get_plugin_var("genretxt") != 0);
     bool showorigin = (get_plugin_var("origintxt") != 0);
-    bool fake = false;
-    char year[4] = { 0 };
-    sprintf(year, "%d", thisMetadata->mAlbumYear);
+    char year[16] = { 0 };
+    snprintf(year, sizeof(year), "%d", thisMetadata->mAlbumYear);
 
     char rpexec[4096] = { 0 };
     strcat(rpexec, "{write_file 'data:/HyperHEN/RB4DX/discordrp.json' {array (");
@@ -356,16 +345,13 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     Symbol GenreLocalized = get_plugin_symvar("genre");
     Symbol OriginLocalized = get_plugin_symvar("origin");
 
-    char detailedint[2048] = { 0 };
-    //famous by/cover
+    memset(detailedint, 0, sizeof(detailedint));
     if (showcover && thisMetadata->mIsCoverRecording)
         strcat(detailedint, famousby);
 
-    //artist
     if (showartist)
         strcat(detailedint, thisMetadata->mArtist);
 
-    //album
     if (showalbum && strcmp(thisMetadata->mAlbum, "") != 0) {
         strcat(detailedint, "\n");
         strcat(detailedint, thisMetadata->mAlbum);
@@ -376,7 +362,6 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
         strcat(detailedint, year);
     }
 
-    //genre
     if (showgenre) {
         strcat(detailedint, "\n");
         strcat(detailedint, GenreLocalized.sym);
@@ -391,31 +376,14 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
         }
         strcat(detailedint, OriginLocalized.sym);
     }
-    char* detailed = detailedint;
-    return detailed;
+    return detailedint;
 }
-
-//read lightbar status (unused)
-
-//int(*TscePadSetLightBar)(int handle, OrbisPadColor *inputColor);
-
-//HOOK_INIT(TscePadSetLightBar);
-
-//void TscePadSetLightBar_hook(int handle, OrbisPadColor *inputColor) {
-    //final_printf("Set Light Bar Color:\n"); //disabled due to log spam
-    //final_printf("R: %d\n", inputColor->r);
-    //final_printf("G: %d\n", inputColor->g);
-    //final_printf("B: %d\n", inputColor->b);
-//    scePadSetLightBar(handle, inputColor);
-//    return;
-//}
 
 void fix_blue_smasher(float* r, float* g, float* b) {
     float max = *r;
     if (*g > max) max = *g;
     if (*b > max) max = *b;
     if (max == 0.0f) return;
-    //makes the highest color 0.5, which seems the brightest the blue smasher can do
     float scale = 0.5f / max;
 
     *r *= scale;
@@ -424,9 +392,6 @@ void fix_blue_smasher(float* r, float* g, float* b) {
     return;
 }
 
-// Custom gem colors from RBVREnhanced, updated to set gems individually instead of all at once
-// TODO: FIND SUSTAIN COLOR
-
 bool(*UpdateColors)(RBGemSmasherCom* thiscom);
 
 HOOK_INIT(UpdateColors);
@@ -434,43 +399,36 @@ HOOK_INIT(UpdateColors);
 bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
     bool enabled = (get_plugin_var("gemcolors") != 0);
     int red = (int)(thiscom->mColor.r * 255);
-    //int green = (int)(thiscom->mColor.g * 255);
-    //int blue = (int)(thiscom->mColor.b * 255);
     if (enabled) {
-        //final_printf("Smasher color detected!\n");
-        //final_printf("R: %d\n", red);
-        //final_printf("G: %d\n", green);
-        //final_printf("B: %d\n", blue);
-
-        //green
+        // green
         if (red == 33) {
             thiscom->mColor.r = (float)get_plugin_var("gemcolgr") / 255;
             thiscom->mColor.g = (float)get_plugin_var("gemcolgg") / 255;
             thiscom->mColor.b = (float)get_plugin_var("gemcolgb") / 255;
             thiscom->mColor.a = 1.0;
         }
-        //red
+        // red
         if (red == 228) {
             thiscom->mColor.r = (float)get_plugin_var("gemcolrr") / 255;
             thiscom->mColor.g = (float)get_plugin_var("gemcolrg") / 255;
             thiscom->mColor.b = (float)get_plugin_var("gemcolrb") / 255;
             thiscom->mColor.a = 1.0;
         }
-        //yellow
+        // yellow
         if (red == 201) {
             thiscom->mColor.r = (float)get_plugin_var("gemcolyr") / 255;
             thiscom->mColor.g = (float)get_plugin_var("gemcolyg") / 255;
             thiscom->mColor.b = (float)get_plugin_var("gemcolyb") / 255;
             thiscom->mColor.a = 1.0;
         }
-        //blue
+        // blue
         if (red == 2) {
             thiscom->mColor.r = (float)get_plugin_var("gemcolbr") / 255;
             thiscom->mColor.g = (float)get_plugin_var("gemcolbg") / 255;
             thiscom->mColor.b = (float)get_plugin_var("gemcolbb") / 255;
             thiscom->mColor.a = 1.0;
         }
-        //orange
+        // orange
         if (red == 190) {
             thiscom->mColor.r = (float)get_plugin_var("gemcolor") / 255;
             thiscom->mColor.g = (float)get_plugin_var("gemcolog") / 255;
@@ -478,7 +436,7 @@ bool UpdateColors_hook(RBGemSmasherCom* thiscom) {
             thiscom->mColor.a = 1.0;
         }
     }
-    if (red == 2) //its better to fix the blue smasher color here to avoid color conflicts
+    if (red == 2)
         fix_blue_smasher(&thiscom->mColor.r, &thiscom->mColor.g, &thiscom->mColor.b);
     return HOOK_CONTINUE(UpdateColors, bool(*)(RBGemSmasherCom*), thiscom);
 }
@@ -499,45 +457,40 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
     int green = (int)(toset->g * 255);
     int blue = (int)(toset->b * 255);
 
-    //if (color == NULL) {
-    //    final_printf("Gem Color detected\n");
-    //    final_printf("R: %d\n", red);
-    //    final_printf("G: %d\n", green);
-    //    final_printf("B: %d\n", blue);
-    //}
-
     Color newcolorg;
     Color newcolorr;
     Color newcolory;
     Color newcolorb;
     Color newcoloro;
 
-    //none
+    // none
     if (
-        ((red != 33) && (green != 93) && (blue != 1)) &&   //green
-        ((red != 228) && (green != 4) && (blue != 8)) &&   //red
-        ((red != 201) && (green != 164) && (blue != 8)) && //yellow
-        ((red != 2) && (green != 82) && (blue != 139)) &&  //blue
-        ((red != 190) && (green != 47) && (blue != 4)) &&  //orange
+        ((red != 33) && (green != 93) && (blue != 1)) &&   // green
+        ((red != 228) && (green != 4) && (blue != 8)) &&   // red
+        ((red != 201) && (green != 164) && (blue != 8)) && // yellow
+        ((red != 2) && (green != 82) && (blue != 139)) &&  // blue
+        ((red != 190) && (green != 47) && (blue != 4)) &&  // orange
 
-        ((red != 61) && (green != 134) && (blue != 0)) && //green
-        ((red != 228) && (green != 1) && (blue != 1)) &&  //red
-        ((red != 1) && (green != 53) && (blue != 107)) && //blue
-        ((red != 207) && (green != 38) && (blue != 1)) && //orange
+        ((red != 61) && (green != 134) && (blue != 0)) && // green
+        ((red != 228) && (green != 1) && (blue != 1)) &&  // red
+        ((red != 1) && (green != 53) && (blue != 107)) && // blue
+        ((red != 207) && (green != 38) && (blue != 1)) && // orange
 
-        ((red != 193) && (green != 176) && (blue != 147)) //OD
+        ((red != 193) && (green != 176) && (blue != 147)) // OD
        )
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
-    //smasher (already set colors, dont set again)
-    if ((color != NULL) &&
-        ((red == get_plugin_var("gemcolgr")) && (green == get_plugin_var("gemcolgg")) && (blue == get_plugin_var("gemcolgb"))) ||   //green
-        ((red == get_plugin_var("gemcolrr")) && (green == get_plugin_var("gemcolrg")) && (blue == get_plugin_var("gemcolrb"))) ||   //red
-        ((red == get_plugin_var("gemcolyr")) && (green == get_plugin_var("gemcolyg")) && (blue == get_plugin_var("gemcolyb"))) || //yellow
-        ((red == get_plugin_var("gemcolbr")) && (green == get_plugin_var("gemcolbg")) && (blue == get_plugin_var("gemcolbb"))) || //blue
-        ((red == get_plugin_var("gemcolor")) && (green == get_plugin_var("gemcolog")) && (blue == get_plugin_var("gemcolob"))) //orange
-        )
+
+    // smasher (already set colors, dont set again)
+    if ((color != NULL) && (
+        ((red == get_plugin_var("gemcolgr")) && (green == get_plugin_var("gemcolgg")) && (blue == get_plugin_var("gemcolgb"))) ||
+        ((red == get_plugin_var("gemcolrr")) && (green == get_plugin_var("gemcolrg")) && (blue == get_plugin_var("gemcolrb"))) ||
+        ((red == get_plugin_var("gemcolyr")) && (green == get_plugin_var("gemcolyg")) && (blue == get_plugin_var("gemcolyb"))) ||
+        ((red == get_plugin_var("gemcolbr")) && (green == get_plugin_var("gemcolbg")) && (blue == get_plugin_var("gemcolbb"))) ||
+        ((red == get_plugin_var("gemcolor")) && (green == get_plugin_var("gemcolog")) && (blue == get_plugin_var("gemcolob")))
+        ))
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, toset, param_6);
-    //green
+
+    // green
     if (((red == 33) && (green == 93) && (blue == 1)) || ((red == 61) && (green == 134) && (blue == 0))) {
         newcolorg.r = (float)get_plugin_var("gemcolgr") / 255;
         newcolorg.g = (float)get_plugin_var("gemcolgg") / 255;
@@ -545,7 +498,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcolorg.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorg, param_6);
     }
-    //red
+    // red
     if (((red == 228) && (green == 4) && (blue == 8)) || ((red == 228) && (green == 1) && (blue == 1))) {
         newcolorr.r = (float)get_plugin_var("gemcolrr") / 255;
         newcolorr.g = (float)get_plugin_var("gemcolrg") / 255;
@@ -553,7 +506,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcolorr.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorr, param_6);
     }
-    //yellow
+    // yellow
     if (((red == 201) && (green == 164) && (blue == 8))) {
         newcolory.r = (float)get_plugin_var("gemcolyr") / 255;
         newcolory.g = (float)get_plugin_var("gemcolyg") / 255;
@@ -561,7 +514,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcolory.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolory, param_6);
     }
-    //blue
+    // blue
     if (((red == 2) && (green == 82) && (blue == 139)) || ((red == 1) && (green == 53) && (blue == 107))) {
         newcolorb.r = (float)get_plugin_var("gemcolbr") / 255;
         newcolorb.g = (float)get_plugin_var("gemcolbg") / 255;
@@ -569,7 +522,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcolorb.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcolorb, param_6);
     }
-    //orange
+    // orange
     if (((red == 190) && (green == 47) && (blue == 4)) || ((red == 207) && (green == 38) && (blue == 1))) {
         newcoloro.r = (float)get_plugin_var("gemcolor") / 255;
         newcoloro.g = (float)get_plugin_var("gemcolog") / 255;
@@ -577,7 +530,7 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
         newcoloro.a = 1.0;
         return HOOK_CONTINUE(DoSetColor, bool(*)(void*, void*, void*, Color*, Color*, bool), component, proppath, propinfo, color, &newcoloro, param_6);
     }
-    //OD
+    // OD
     if ((red == 193) && (green == 176) && (blue == 147)) {
         newcoloro.r = (float)get_plugin_var("gemcolodr") / 255;
         newcoloro.g = (float)get_plugin_var("gemcolodg") / 255;
@@ -591,7 +544,6 @@ bool DoSetColor_hook(void* component, void* proppath, void* propinfo, Color* col
 float(*GetPadExtraLag)(JoypadType, LagContext);
 HOOK_INIT(GetPadExtraLag);
 float GetPadExtraLag_hook(JoypadType JoypadType, LagContext LagContext) {
-    //final_printf("joypadtype: %d\n", JoypadType);
     float fVar1;
     if (LagContext == kVCal) {
         switch (JoypadType) {
@@ -695,79 +647,19 @@ void ApplyCameraShake_hook(long param_1, void* param_2, void* param_3, void* par
     return;
 }
 
-//bool(*InSlopWindow)(void*, float, float);
-//HOOK_INIT(InSlopWindow);
-//bool InSlopWindow_hook(void* param_1, float param_2, float param_3) {
-//    float syncoffset = *(float*)((char*)param_1 + 0x70);
-//    float slop = *(float*)((char*)param_1 + 0x38);
-//    bool isin = fabsf((param_3 + syncoffset - param_2)) <= slop;
-//    if (isin) {
-//        final_printf("MS OFFSET: %f\n", (param_3 + syncoffset - param_2));
-//        //final_printf("slop: %f\n", slop);
-//        slopsum += (param_3 + syncoffset - param_2);
-//        slopcount++;
-//        final_printf("Current average: %f\n", slopsum / slopcount);
-//        //final_printf("%f\n", fabsf((param_3 + syncoffset - param_2)));
-//    }
-//    return isin;
-//}
-//
-//void* Detour_DetourFunctionspecial(Detour* This, uint64_t FunctionPtr, void* HookPtr) {
-//
-//    uint32_t InstructionSize = Detour_GetInstructionSize(This, FunctionPtr, sizeof(This->JumpInstructions64));
-//
-//    int res = sceKernelMmap(0, sizeof(This->JumpInstructions64), VM_PROT_ALL, 0x1000 | 0x2, -1, 0, &This->TrampolinePtr);
-//
-//    if (res < 0 || This->TrampolinePtr == 0) {
-//        return 0;
-//    }
-//
-//    Detour_WriteJump64(This, This->TrampolinePtr, (uint64_t)HookPtr);
-//
-//    // Save Pointers for later
-//    This->FunctionPtr = (void*)FunctionPtr;
-//    This->HookPtr = HookPtr;
-//
-//    // Set protection.
-//    sceKernelMprotect((void*)FunctionPtr, InstructionSize, VM_PROT_ALL);
-//
-//    //Allocate Executable memory for stub and write instructions to stub and a jump back to original execution.
-//    This->StubSize = (InstructionSize + sizeof(This->JumpInstructions64));
-//    res = sceKernelMmap(0, This->StubSize, VM_PROT_ALL, 0x1000 | 0x2, -1, 0, &This->StubPtr);
-//
-//    if (res < 0 || This->StubPtr == 0) {
-//        return 0;
-//    }
-//
-//    memcpy(This->StubPtr, (void*)FunctionPtr, InstructionSize);
-//    Detour_WriteJump64(This, (void*)((uint64_t)This->StubPtr + InstructionSize), (uint64_t)(FunctionPtr + InstructionSize));
-//
-//    // Write jump from function to hook.
-//    memset((void*)FunctionPtr, 0x90, InstructionSize);
-//    Detour_WriteJump64(This, (void*)FunctionPtr, (uint64_t)This->TrampolinePtr);
-//
-//#if (DEBUG) == 0
-//    klog("[Detour] %s: Detour Written Successfully! (FunctionPtr: %p - HookPtr: %p - HookPtrTrampoline: %p - StubPtr: %p - StubSize: %zu)\n", __FUNCTION__, This->FunctionPtr, This->HookPtr, This->TrampolinePtr, This->StubPtr, This->StubSize);
-//#endif
-//
-//    return This->StubPtr;
-//}
-
 bool(*IsEmoteCamGroup)(void*);
 HOOK_INIT(IsEmoteCamGroup);
 bool IsEmoteCamGroup_hook(void* param_1) {
     int force = get_plugin_var("player_intros");
     if (force == 1)
         return true;
-    //HOOK_CONTINUE doesn't work here so I just copied the ghidra pseudocode
-    //this sucks - LX
-    if (*(char*)(param_1 + 0x8990) == '\0') {
+    if (*(char*)((uintptr_t)param_1 + 0x8990) == '\0') {
         return false;
     }
-    if (*(char*)(param_1 + 0x8991) != '\0') {
+    if (*(char*)((uintptr_t)param_1 + 0x8991) != '\0') {
         return false;
     }
-    return *(char*)(param_1 + 0xb54) != '\0';
+    return *(char*)((uintptr_t)param_1 + 0xb54) != '\0';
 }
 
 int32_t attr_public module_start(size_t argc, const void *args)
@@ -792,13 +684,11 @@ int32_t attr_public module_start(size_t argc, const void *args)
     GetArtist = (void*)(base_address + 0x00f28d30);
     RBMetaStateGoto = (void*)(base_address + 0x00bb5d40);
     SetMusicSpeed = (void*)(base_address + 0x00a470e0);
-    //TscePadSetLightBar = (void*)(base_address + 0x012450d0);
     UpdateColors = (void*)(base_address + 0x00f94a70);
     DoSetColor = (void*)(base_address + 0x001a7320);
     DataExecuteString = (void*)(base_address + 0x0021f0e0);
     GetPadExtraLag = (void*)(base_address + 0x003901f0);
     ApplyCameraShake = (void*)(base_address + 0x0104c480);
-    //InSlopWindow = (void*)(base_address + 0x01230e30);
     IsEmoteCamGroup = (void*)(base_address + 0x00d2a250);
 
     // apply all hooks
@@ -810,16 +700,11 @@ int32_t attr_public module_start(size_t argc, const void *args)
     HOOK(GetArtist);
     HOOK(RBMetaStateGoto);
     HOOK(NewFile);
-    //HOOK(TscePadSetLightBar);
     HOOK(UpdateColors);
     HOOK(DoSetColor);
     HOOK(GetPadExtraLag);
     HOOK(ApplyCameraShake);
     HOOK(IsEmoteCamGroup);
-    //Detour_Construct(&Detour_InSlopWindow, DetourMode_x64);
-    //Detour_DetourFunctionspecial(&Detour_InSlopWindow, (uint64_t)InSlopWindow, (void*)(&InSlopWindow_hook));
-
-    //HOOK(InSlopWindow);
 
     return 0;
 }
@@ -827,7 +712,6 @@ int32_t attr_public module_start(size_t argc, const void *args)
 int32_t attr_public module_stop(size_t argc, const void *args)
 {
     final_printf("Stopping plugin...\n");
-    // unhook everything just in case
     DestroyDTAHooks();
     DestroyAutoplayHooks();
     DestroySortHooks();
@@ -836,10 +720,10 @@ int32_t attr_public module_stop(size_t argc, const void *args)
     UNHOOK(GetArtist);
     UNHOOK(RBMetaStateGoto);
     UNHOOK(NewFile);
-    //(TscePadSetLightBar);
     UNHOOK(UpdateColors);
     UNHOOK(DoSetColor);
     UNHOOK(GetPadExtraLag);
     UNHOOK(ApplyCameraShake);
+    UNHOOK(IsEmoteCamGroup);
     return 0;
 }
