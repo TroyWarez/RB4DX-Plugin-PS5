@@ -65,7 +65,7 @@ out_error:
     return -1;
 }
 
-const char* DXFolder = "/data/GoldHEN/RB4DX/";
+const char* DXFolder = "/data/HyperHEN/RB4DX/";
 Symbol(*Symbol_Ctor)(Symbol*, const char*);
 void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
@@ -351,10 +351,10 @@ void replace_floats(const char* filename, long offset, const float* values, size
     return;
 }
 
-const char* score_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/hud.scene_ps4";
-const char* countdown_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/break_countdown.entity_ps4";
-const char* solo_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
-const char* mtv_file_path = "/data/GoldHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
+const char* score_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/hud.scene_ps4";
+const char* countdown_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/break_countdown.entity_ps4";
+const char* solo_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
+const char* mtv_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
 
 DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
@@ -660,28 +660,28 @@ void DataInitFuncs_hook() {
     // Copy file
     Symbol_Ctor(&funcsym, "file_copy");
     DataRegisterFunc(funcsym, DataFileCopy);
-    // DX: file_copy using "/data/GoldHEN/RB4DX/" as root path
+    // DX: file_copy using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_copy");
     DataRegisterFunc(funcsym, DxFileCopy);
-    // DX: file_rename using "/data/GoldHEN/RB4DX/" as root path
+    // DX: file_rename using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_rename");
     DataRegisterFunc(funcsym, DxFileRename);
-    // DX: file_exists using "/data/GoldHEN/RB4DX/" as root path
+    // DX: file_exists using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_exists");
     DataRegisterFunc(funcsym, DxFileExists);
-    // DX: file_delete using "/data/GoldHEN/RB4DX/" as root path
+    // DX: file_delete using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_delete");
     DataRegisterFunc(funcsym, DxFileDelete);
-    // DX: file_mkdir using "/data/GoldHEN/RB4DX/" as root path
+    // DX: file_mkdir using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_mkdir");
     DataRegisterFunc(funcsym, DxFileMkdir);
     // Delete Directory
     Symbol_Ctor(&funcsym, "file_rmdir");
     DataRegisterFunc(funcsym, FileRmdir);
-    // DX: file_rmdir using "/data/GoldHEN/RB4DX/" as root path
+    // DX: file_rmdir using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_file_rmdir");
     DataRegisterFunc(funcsym, DxFileRmdir);
-    // DX: write_file using "/data/GoldHEN/RB4DX/" as root path (always creates blank file)
+    // DX: write_file using "/data/HyperHEN/RB4DX/" as root path (always creates blank file)
     Symbol_Ctor(&funcsym, "dx_write_null_file");
     DataRegisterFunc(funcsym, DxWriteNullFile);
     // Allow DataForceSym to be called from DTA
@@ -703,7 +703,7 @@ void DataInitFuncs_hook() {
     // Read File as Float
     Symbol_Ctor(&funcsym, "read_file_as_float");
     DataRegisterFunc(funcsym, DataReadFileAsFloat);
-    // DX: Read File as Float using "/data/GoldHEN/RB4DX/" as root path
+    // DX: Read File as Float using "/data/HyperHEN/RB4DX/" as root path
     Symbol_Ctor(&funcsym, "dx_read_file_as_float");
     DataRegisterFunc(funcsym, DxReadFileAsFloat);
 
@@ -776,11 +776,11 @@ void SystemOptionsLoad_hook(SystemOptions* thisoptions, void* binstream) {
     options = thisoptions;
     HOOK_CONTINUE(SystemOptionsLoad, void (*)(SystemOptions*, void*), thisoptions, binstream);
     //force override calibration if not saved in the save file
-    if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
-        options->mVideoOffset = read_file_as_float("/data/GoldHEN/RB4DX/videocalib.ini");
+    if (file_exists("/data/HyperHEN/RB4DX/videocalib.ini")) {
+        options->mVideoOffset = read_file_as_float("/data/HyperHEN/RB4DX/videocalib.ini");
     }
-    if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
-        options->mAudioOffset = read_file_as_float("/data/GoldHEN/RB4DX/audiocalib.ini");
+    if (file_exists("/data/HyperHEN/RB4DX/audiocalib.ini")) {
+        options->mAudioOffset = read_file_as_float("/data/HyperHEN/RB4DX/audiocalib.ini");
     }
     //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset); // 260
     //DoNotificationa("Video Offset Set: %.0f", thisoptions->mVideoOffset); // 260
@@ -797,11 +797,11 @@ void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
     HOOK_CONTINUE(RBSystemOptionsSave, void (*)(void*, void*), thisoptions, binstream);
     //DoNotificationa("Audio Offset Set: %.0f", thisoptions->mAudioOffset);
     // delete force override files when this is called
-    if (file_exists("/data/GoldHEN/RB4DX/videocalib.ini")) {
-        sceKernelUnlink("/data/GoldHEN/RB4DX/videocalib.ini");
+    if (file_exists("/data/HyperHEN/RB4DX/videocalib.ini")) {
+        sceKernelUnlink("/data/HyperHEN/RB4DX/videocalib.ini");
     }
-    if (file_exists("/data/GoldHEN/RB4DX/audiocalib.ini")) {
-        sceKernelUnlink("/data/GoldHEN/RB4DX/audiocalib.ini");
+    if (file_exists("/data/HyperHEN/RB4DX/audiocalib.ini")) {
+        sceKernelUnlink("/data/HyperHEN/RB4DX/audiocalib.ini");
     }
     return;
 }

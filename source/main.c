@@ -35,7 +35,7 @@ attr_public const char *g_pluginAuth = "LysiX";
 attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
 
 void DoNotificationStatic(const char* text) {
-    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
+    bool NotifyColored = file_exists("/data/HyperHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     Buffer.useIconImageUri = 1;
     Buffer.targetId = -1;
@@ -48,7 +48,7 @@ void DoNotificationStatic(const char* text) {
 }
 
 void DoNotification(const char *FMT, ...) {
-    bool NotifyColored = file_exists("/data/GoldHEN/RB4DX/notifycolored.ini");
+    bool NotifyColored = file_exists("/data/HyperHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     va_list args;
     va_start(args, FMT);
@@ -71,8 +71,8 @@ bool is_emu = false;
 DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 
 // ARKless file loading hook
-const char* RawfilesFolder = "/data/GoldHEN/RB4DX/";
-const char* GameRawfilesFolder = "data:/GoldHEN/RB4DX/";
+const char* RawfilesFolder = "/data/HyperHEN/RB4DX/";
+const char* GameRawfilesFolder = "data:/HyperHEN/RB4DX/";
 bool PrintRawfiles = false;
 bool PrintArkfiles = false;
 
@@ -176,7 +176,7 @@ char* GetTitle_hook(SongMetadata* thisMetadata) {
         }
     }
 
-    bool speedfile = file_exists("/data/GoldHEN/RB4DX/speedmod.ini");
+    bool speedfile = file_exists("/data/HyperHEN/RB4DX/speedmod.ini");
     int speed = get_plugin_var("speedmod");
     char speedtitleint[512] = {0};
     char speedtxt[512] = { 0 };
@@ -230,7 +230,7 @@ void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     if (state != 3 && state != 44 && state != 9 && get_plugin_var("dontmodifyartist") != 0)
         set_plugin_var("dontmodifyartist", 0);
     if (state != 3 && state != 44 && state != 9)
-        DataExecuteString(&ret, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
+        DataExecuteString(&ret, "{write_file 'data:/HyperHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
 }
 
@@ -299,7 +299,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     sprintf(year, "%d", thisMetadata->mAlbumYear);
 
     char rpexec[4096] = { 0 };
-    strcat(rpexec, "{write_file 'data:/GoldHEN/RB4DX/discordrp.json' {array (");
+    strcat(rpexec, "{write_file 'data:/HyperHEN/RB4DX/discordrp.json' {array (");
 
     char richprescence[4096] = { 0 };
     strcat(richprescence, "\"{\\qGame mode\\q:\\qqp_coop\\q,\\qLoaded Song\\q:\\q");

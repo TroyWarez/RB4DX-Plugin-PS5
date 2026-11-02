@@ -26,7 +26,7 @@ void SetGameOver_hook(void* thisGame,  bool won) {
 
     set_plugin_var("dontmodifyartist", 1);
 
-    if (file_exists("/data/GoldHEN/RB4DX/saving.ini")) {
+    if (file_exists("/data/HyperHEN/RB4DX/saving.ini")) {
         //for some reason checking if a file exists will make saving work
         HOOK_CONTINUE(SetGameOver, void (*)(void*, bool), thisGame, won);
         return;
