@@ -8,6 +8,44 @@
 #include <sys/mman.h>
 #include <GoldHEN/Common.h>
 #include <orbis/libkernel.h>
+/* Older OpenOrbis headers lack the extended module info struct. */
+typedef struct {
+    void    *address;
+    uint32_t size;
+    int32_t  prot;
+} OOCompatSegmentInfo;
+
+typedef struct {
+    size_t   size;                /* 0x000  set to sizeof() before calling */
+    char     name[256];           /* 0x008 */
+    int32_t  id;                  /* 0x108 */
+    uint32_t tlsIndex;            /* 0x10C */
+    void    *tlsInitAddr;         /* 0x110 */
+    uint32_t tlsInitSize;         /* 0x118 */
+    uint32_t tlsSize;             /* 0x11C */
+    uint32_t tlsOffset;           /* 0x120 */
+    uint32_t tlsAlign;            /* 0x124 */
+    void    *initProcAddr;        /* 0x128 */
+    void    *finiProcAddr;        /* 0x130 */
+    uint64_t reserved1;           /* 0x138 */
+    uint64_t reserved2;           /* 0x140 */
+    void    *ehFrameHdrAddr;      /* 0x148 */
+    void    *ehFrameAddr;         /* 0x150 */
+    uint32_t ehFrameHdrSize;      /* 0x158 */
+    uint32_t ehFrameSize;         /* 0x15C */
+    OOCompatSegmentInfo segmentInfo[4]; /* 0x160 */
+    uint32_t segmentCount;        /* 0x1A0 */
+    uint32_t refCount;            /* 0x1A4 */
+} OrbisKernelModuleInfoEx;
+
+_Static_assert(sizeof(OrbisKernelModuleInfoEx) == 0x1A8, "bad ModuleInfoEx size");
+_Static_assert(offsetof(OrbisKernelModuleInfoEx, segmentInfo) == 0x160, "bad segment offset");
+
+/* v0.5.4 declares this as returning void; it really returns an error code.
+   Declare a correctly-typed alias bound to the same symbol. */
+int32_t oo_sceKernelGetModuleInfoInternal(int32_t handle, OrbisKernelModuleInfoEx *info)
+    __asm__("sceKernelGetModuleInfoInternal");
+#define sceKernelGetModuleInfoInternal oo_sceKernelGetModuleInfoInternal
 #include "plugin_common.h"
 #include <fcntl.h>
 #include <unistd.h>
@@ -17,8 +55,7 @@ static uint64_t base_address = 0;
 // shadPS4 base address (new)
 #define SHADPS4_BASE 0x800000000
 
-int sceKernelGetModuleList(int *handles, size_t max_handles, size_t *num_handles);
-
+#if 0  /* duplicates of ps5_compat.c */
 // PS5 compatibility override for GoldHEN SDK memory R/W (syscall 500 replacement)
 int sys_sdk_proc_rw(struct proc_rw *data) {
     if (!data || !data->address || !data->data || data->length == 0) {
@@ -59,6 +96,8 @@ int sys_sdk_proc_info(struct proc_info *info) {
     strncpy(info->version, "02.21", sizeof(info->version) - 1);
     return 0;
 }
+
+#endif
 
 uint64_t get_base_address() {
     if (base_address != 0) {

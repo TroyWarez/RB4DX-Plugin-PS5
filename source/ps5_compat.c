@@ -19,8 +19,9 @@ typedef struct {
     uint8_t fingerprint[20];
 } OrbisKernelModuleInfo_PS5;
 
-int sceKernelGetModuleList(int *handles, size_t max_handles, size_t *num_handles);
-int sceKernelGetModuleInfo(int handle, OrbisKernelModuleInfo_PS5 *info);
+
+int oo_sceKernelGetModuleInfo(int handle, OrbisKernelModuleInfo_PS5 *info) __asm__("sceKernelGetModuleInfo");
+#define sceKernelGetModuleInfo oo_sceKernelGetModuleInfo
 int sceKernelGetAppInfo(pid_t pid, OrbisAppInfo *info);
 
 // Overrides GoldHEN syscall 500 memory R/W for HOOK_INIT and byte patches
