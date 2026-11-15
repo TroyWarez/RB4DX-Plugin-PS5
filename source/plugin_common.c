@@ -55,49 +55,6 @@ static uint64_t base_address = 0;
 // shadPS4 base address (new)
 #define SHADPS4_BASE 0x800000000
 
-#if 0  /* duplicates of ps5_compat.c */
-// PS5 compatibility override for GoldHEN SDK memory R/W (syscall 500 replacement)
-int sys_sdk_proc_rw(struct proc_rw *data) {
-    if (!data || !data->address || !data->data || data->length == 0) {
-        return -1;
-    }
-
-    uintptr_t addr = (uintptr_t)data->address;
-    uintptr_t page_start = addr & ~0x3FFFULL;
-    size_t page_len = ((addr + data->length - page_start) + 0x3FFFULL) & ~0x3FFFULL;
-
-    if (data->write_flags) {
-        if (sceKernelMprotect((void *)page_start, page_len, VM_PROT_ALL) < 0) {
-            page_start = addr & ~0xFFFULL;
-            page_len = ((addr + data->length - page_start) + 0xFFFULL) & ~0xFFFULL;
-            sceKernelMprotect((void *)page_start, page_len, VM_PROT_ALL);
-        }
-        memcpy((void *)addr, data->data, data->length);
-    } else {
-        memcpy(data->data, (const void *)addr, data->length);
-    }
-    return 0;
-}
-
-// PS5 compatibility override for GoldHEN SDK proc_info (syscall 500 replacement)
-int sys_sdk_proc_info(struct proc_info *info) {
-    if (!info) {
-        return -1;
-    }
-    memset(info, 0, sizeof(struct proc_info));
-
-    uint64_t base = get_base_address();
-    if (base == 0) {
-        return -1;
-    }
-
-    info->base_address = base;
-    strncpy(info->name, "eboot.bin", sizeof(info->name) - 1);
-    strncpy(info->version, "02.21", sizeof(info->version) - 1);
-    return 0;
-}
-
-#endif
 
 uint64_t get_base_address() {
     if (base_address != 0) {
