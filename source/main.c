@@ -14,8 +14,8 @@
 #define attr_module_hidden __attribute__((weak)) __attribute__((visibility("hidden")))
 #define attr_public __attribute__((visibility("default")))
 
-#define GOLDHEN_PATH "/data/GoldHEN"
-#define RB4DX_PATH GOLDHEN_PATH "/RB4DX"
+#define HYPERHEN_PATH "/data/HyperHEN"
+#define RB4DX_PATH HYPERHEN_PATH "/RB4DX"
 
 #include <GoldHEN/Common.h>
 #include <orbis/libkernel.h>
