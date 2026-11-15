@@ -60,7 +60,7 @@ int cp(const char* to, const char* from)
     return (nread == 0) ? 0 : -1;
 }
 
-const char* DXFolder = "/data/HyperHEN/RB4DX/";
+const char* DXFolder = "/data/etaHEN/RB4DX/";
 Symbol(*Symbol_Ctor)(Symbol*, const char*);
 void(*DataInitFuncs)();
 void(*DataRegisterFunc)(Symbol, DataFunc);
@@ -324,10 +324,10 @@ void replace_floats(const char* filename, long offset, const float* values, size
     close(fp);
 }
 
-const char* score_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/hud.scene_ps4";
-const char* countdown_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/break_countdown.entity_ps4";
-const char* solo_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
-const char* mtv_file_path = "/data/HyperHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
+const char* score_file_path = "/data/etaHEN/RB4DX/ps4/ui/game/hud.scene_ps4";
+const char* countdown_file_path = "/data/etaHEN/RB4DX/ps4/ui/game/break_countdown.entity_ps4";
+const char* solo_file_path = "/data/etaHEN/RB4DX/ps4/ui/game/solo_percentage.entity_ps4";
+const char* mtv_file_path = "/data/etaHEN/RB4DX/ps4/ui/game/song_artist_overlay.entity_ps4";
 
 DataNode* DataWriteScoreFile(DataNode* ret, DataArray* args) {
     DataNode _firstArg = (args->mNodes->n[1]);
@@ -696,11 +696,11 @@ HOOK_INIT(SystemOptionsLoad);
 void SystemOptionsLoad_hook(SystemOptions* thisoptions, void* binstream) {
     options = thisoptions;
     HOOK_CONTINUE(SystemOptionsLoad, void (*)(SystemOptions*, void*), thisoptions, binstream);
-    if (file_exists("/data/HyperHEN/RB4DX/videocalib.ini")) {
-        options->mVideoOffset = read_file_as_float("/data/HyperHEN/RB4DX/videocalib.ini");
+    if (file_exists("/data/etaHEN/RB4DX/videocalib.ini")) {
+        options->mVideoOffset = read_file_as_float("/data/etaHEN/RB4DX/videocalib.ini");
     }
-    if (file_exists("/data/HyperHEN/RB4DX/audiocalib.ini")) {
-        options->mAudioOffset = read_file_as_float("/data/HyperHEN/RB4DX/audiocalib.ini");
+    if (file_exists("/data/etaHEN/RB4DX/audiocalib.ini")) {
+        options->mAudioOffset = read_file_as_float("/data/etaHEN/RB4DX/audiocalib.ini");
     }
     return;
 }
@@ -711,11 +711,11 @@ HOOK_INIT(RBSystemOptionsSave);
 
 void RBSystemOptionsSave_hook(void* thisoptions, void* binstream) {
     HOOK_CONTINUE(RBSystemOptionsSave, void (*)(void*, void*), thisoptions, binstream);
-    if (file_exists("/data/HyperHEN/RB4DX/videocalib.ini")) {
-        sceKernelUnlink("/data/HyperHEN/RB4DX/videocalib.ini");
+    if (file_exists("/data/etaHEN/RB4DX/videocalib.ini")) {
+        sceKernelUnlink("/data/etaHEN/RB4DX/videocalib.ini");
     }
-    if (file_exists("/data/HyperHEN/RB4DX/audiocalib.ini")) {
-        sceKernelUnlink("/data/HyperHEN/RB4DX/audiocalib.ini");
+    if (file_exists("/data/etaHEN/RB4DX/audiocalib.ini")) {
+        sceKernelUnlink("/data/etaHEN/RB4DX/audiocalib.ini");
     }
     return;
 }

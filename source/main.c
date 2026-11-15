@@ -14,8 +14,8 @@
 #define attr_module_hidden __attribute__((weak)) __attribute__((visibility("hidden")))
 #define attr_public __attribute__((visibility("default")))
 
-#define HYPERHEN_PATH "/data/HyperHEN"
-#define RB4DX_PATH HYPERHEN_PATH "/RB4DX"
+#define ETAHEN_PATH "/data/etaHEN"
+#define RB4DX_PATH ETAHEN_PATH "/RB4DX"
 
 #include <GoldHEN/Common.h>
 #include <orbis/libkernel.h>
@@ -36,7 +36,7 @@ attr_public const char *g_pluginAuth = "LysiX";
 attr_public uint32_t g_pluginVersion = 0x00000100; // 1.00
 
 void DoNotificationStatic(const char* text) {
-    bool NotifyColored = file_exists("/data/HyperHEN/RB4DX/notifycolored.ini");
+    bool NotifyColored = file_exists("/data/etaHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     Buffer.type = NotificationRequest;
     Buffer.unk3 = 0;
@@ -51,7 +51,7 @@ void DoNotificationStatic(const char* text) {
 }
 
 void DoNotification(const char *FMT, ...) {
-    bool NotifyColored = file_exists("/data/HyperHEN/RB4DX/notifycolored.ini");
+    bool NotifyColored = file_exists("/data/etaHEN/RB4DX/notifycolored.ini");
     OrbisNotificationRequest Buffer = { 0 };
     va_list args;
     va_start(args, FMT);
@@ -74,8 +74,8 @@ bool is_emu = false;
 DataNode* (*DataExecuteString)(DataNode* __return_storage_ptr__, char* param_1);
 
 // ARKless file loading hook
-const char* RawfilesFolder = "/data/HyperHEN/RB4DX/";
-const char* GameRawfilesFolder = "data:/HyperHEN/RB4DX/";
+const char* RawfilesFolder = "/data/etaHEN/RB4DX/";
+const char* GameRawfilesFolder = "data:/etaHEN/RB4DX/";
 bool PrintRawfiles = false;
 bool PrintArkfiles = false;
 
@@ -221,7 +221,7 @@ void RBMetaStateGoto_hook(void* thisMetaState, int state) {
     if (state != 3 && state != 44 && state != 9 && get_plugin_var("dontmodifyartist") != 0)
         set_plugin_var("dontmodifyartist", 0);
     if (state != 3 && state != 44 && state != 9)
-        DataExecuteString(&ret, "{write_file 'data:/HyperHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
+        DataExecuteString(&ret, "{write_file 'data:/etaHEN/RB4DX/discordrp.json' {array (\"{\\qGame mode\\q:\\qdefaults\\q}\")}}");
     return;
 }
 
@@ -288,7 +288,7 @@ char* GetArtist_hook(SongMetadata* thisMetadata) {
     snprintf(year, sizeof(year), "%d", thisMetadata->mAlbumYear);
 
     char rpexec[4096] = { 0 };
-    strcat(rpexec, "{write_file 'data:/HyperHEN/RB4DX/discordrp.json' {array (");
+    strcat(rpexec, "{write_file 'data:/etaHEN/RB4DX/discordrp.json' {array (");
 
     char richprescence[4096] = { 0 };
     strcat(richprescence, "\"{\\qGame mode\\q:\\qqp_coop\\q,\\qLoaded Song\\q:\\q");
@@ -672,6 +672,7 @@ int32_t attr_public module_start(size_t argc, const void *args)
 
     if (base_address == 0) {
         final_printf("Couldn't get eboot base address!\n");
+        DoNotificationStatic("RB4DX: couldn't find game base address");
         return 0;
     }
 
